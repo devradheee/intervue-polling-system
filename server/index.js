@@ -1,10 +1,20 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -212,6 +222,10 @@ app.post('/api/polls/:id/vote', async (req, res) => {
     poll.totalVotes += 1;
 
     const updatedPoll = await poll.save();
+    
+    // Emit real-time update to all connected clients
+    io.emit(`poll:${req.params.id}:update`, updatedPoll);
+    
     res.json(updatedPoll);
   } catch (error) {
     console.error('Error voting:', error);
@@ -272,7 +286,29 @@ app.get('/api/db-status', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('✅ Client connected:', socket.id);
+
+  // Join a poll room for real-time updates
+  socket.on('join-poll', (pollId) => {
+    socket.join(`poll:${pollId}`);
+    console.log(`Client ${socket.id} joined poll: ${pollId}`);
+  });
+
+  // Leave a poll room
+  socket.on('leave-poll', (pollId) => {
+    socket.leave(`poll:${pollId}`);
+    console.log(`Client ${socket.id} left poll: ${pollId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('❌ Client disconnected:', socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Socket.IO server ready for real-time connections`);
 });
 

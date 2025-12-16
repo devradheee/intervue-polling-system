@@ -17,6 +17,8 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+fix_mongodb.md
+mongodb_setup.md
 
 # Logs
 npm-debug.log*

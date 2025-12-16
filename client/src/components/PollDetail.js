@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getPoll, voteOnPoll } from '../services/api';
+import { connectSocket, disconnectSocket } from '../services/socket';
 import './PollDetail.css';
-import { FiArrowLeft, FiCheck, FiBarChart2 } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiBarChart2, FiWifi, FiWifiOff, FiRefreshCw } from 'react-icons/fi';
 
 function PollDetail() {
   const { id } = useParams();
@@ -13,10 +14,51 @@ function PollDetail() {
   const [voted, setVoted] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchPoll();
-  }, [id]);
+    
+    // Connect to Socket.IO for real-time updates
+    try {
+      const socket = connectSocket();
+      socketRef.current = socket;
+      
+      socket.on('connect', () => {
+        setIsConnected(true);
+        socket.emit('join-poll', id);
+      });
+      
+      socket.on('disconnect', () => {
+        setIsConnected(false);
+      });
+
+      socket.on('connect_error', () => {
+        setIsConnected(false);
+      });
+
+      // Listen for real-time poll updates
+      socket.on(`poll:${id}:update`, (updatedPoll) => {
+        setPoll(updatedPoll);
+        // Auto-show results when someone votes
+        if (!voted && updatedPoll.totalVotes > 0) {
+          setVoted(true);
+        }
+      });
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.emit('leave-poll', id);
+          socketRef.current.off(`poll:${id}:update`);
+          disconnectSocket();
+        }
+      };
+    } catch (error) {
+      console.error('Socket connection error:', error);
+      setIsConnected(false);
+    }
+  }, [id, voted]);
 
   const fetchPoll = async () => {
     try {
@@ -103,12 +145,20 @@ function PollDetail() {
           <span>{poll.totalVotes} total votes</span>
           <span>•</span>
           <span>Created {new Date(poll.createdAt).toLocaleDateString()}</span>
+          <span className="connection-status">
+            {isConnected ? (
+              <><FiWifi /> Live</>
+            ) : (
+              <><FiWifiOff /> Offline</>
+            )}
+          </span>
         </div>
 
-        {voted || expired ? (
+        {(voted || expired || poll.totalVotes > 0) ? (
           <div className="results-section">
             <h3>
-              <FiBarChart2 /> Results
+              <FiBarChart2 /> Live Results
+              {isConnected && <span className="live-indicator"></span>}
             </h3>
             <div className="results-list">
               {poll.options
@@ -162,7 +212,7 @@ function PollDetail() {
 
         {voted && !expired && (
           <button onClick={fetchPoll} className="refresh-button">
-            Refresh Results
+            <FiRefreshCw /> Refresh Results
           </button>
         )}
       </div>
