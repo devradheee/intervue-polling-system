@@ -13,46 +13,69 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// MongoDB connection
+// MongoDB connection with improved error handling
 if (!MONGO_URI) {
   console.error('⚠️  MONGO_URI is not defined in .env file');
   console.error('Please create server/.env file with your MongoDB connection string');
+  console.error('Run: node verify-connection.js to test your connection string');
 } else {
-  mongoose
-    .connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-    })
-    .then(() => {
-      console.log('✅ Connected to MongoDB successfully');
-      console.log(`📊 Database: ${mongoose.connection.name}`);
-    })
-    .catch((error) => {
-      console.error('\n❌ MongoDB connection error:', error.message);
-      console.error('\n💡 Troubleshooting tips:');
-      console.error('1. Check if MONGO_URI in server/.env is correct');
-      console.error('2. Make sure your password is URL-encoded (@ becomes %40)');
-      console.error('3. Verify MongoDB Atlas network access allows your IP (0.0.0.0/0 for all)');
-      console.error('4. Check if your MongoDB cluster is running');
-      console.error('5. Verify the cluster hostname matches your connection string');
-      console.error(`\nCurrent MONGO_URI format: ${MONGO_URI ? MONGO_URI.replace(/:[^:@]+@/, ':****@') : 'NOT SET'}\n`);
-      
-      // Try to reconnect after 10 seconds
-      console.log('🔄 Will retry connection in 10 seconds...\n');
-      setTimeout(() => {
-        mongoose.connect(MONGO_URI, {
-          serverSelectionTimeoutMS: 10000,
-          socketTimeoutMS: 45000,
-        })
-        .then(() => {
-          console.log('✅ Reconnected to MongoDB successfully');
-          console.log(`📊 Database: ${mongoose.connection.name}`);
-        })
-        .catch((retryError) => {
-          console.error('❌ Retry failed:', retryError.message);
-        });
-      }, 10000);
-    });
+  // Validate connection string format
+  const uriPattern = /^mongodb\+srv:\/\/[^:]+:[^@]+@[^/]+\/[^?]+\?/;
+  if (!uriPattern.test(MONGO_URI)) {
+    console.error('❌ Invalid MONGO_URI format in .env file');
+    console.error('Expected: mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/DATABASE?retryWrites=true&w=majority');
+    console.error('Run: node verify-connection.js to verify your connection string');
+  } else {
+    mongoose
+      .connect(MONGO_URI, {
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+      })
+      .then(() => {
+        console.log('✅ Connected to MongoDB successfully');
+        console.log(`📊 Database: ${mongoose.connection.name}`);
+        console.log(`🔗 Host: ${mongoose.connection.host}`);
+      })
+      .catch((error) => {
+        console.error('\n❌ MongoDB connection error:', error.message);
+        console.error('\n💡 Troubleshooting:');
+        
+        if (error.message.includes('ENOTFOUND')) {
+          console.error('   The cluster hostname is incorrect!');
+          console.error('   Get your correct connection string from MongoDB Atlas:');
+          console.error('   1. Go to MongoDB Atlas → Connect → Connect your application');
+          console.error('   2. Copy the connection string');
+          console.error('   3. Update server/.env with the correct MONGO_URI');
+        } else if (error.message.includes('authentication')) {
+          console.error('   Authentication failed!');
+          console.error('   - Check username and password');
+          console.error('   - URL-encode special characters (@ → %40)');
+        } else if (error.message.includes('timeout')) {
+          console.error('   Connection timeout!');
+          console.error('   - Check MongoDB Atlas Network Access settings');
+          console.error('   - Add your IP or 0.0.0.0/0 for development');
+        }
+        
+        console.error(`\n📋 Current MONGO_URI: ${MONGO_URI.replace(/:[^:@]+@/, ':****@')}`);
+        console.error('\n🔧 Test your connection: node verify-connection.js\n');
+        
+        // Try to reconnect after 10 seconds
+        console.log('🔄 Will retry connection in 10 seconds...\n');
+        setTimeout(() => {
+          mongoose.connect(MONGO_URI, {
+            serverSelectionTimeoutMS: 10000,
+            socketTimeoutMS: 45000,
+          })
+          .then(() => {
+            console.log('✅ Reconnected to MongoDB successfully');
+            console.log(`📊 Database: ${mongoose.connection.name}`);
+          })
+          .catch((retryError) => {
+            console.error('❌ Retry failed:', retryError.message);
+          });
+        }, 10000);
+      });
+  }
 }
 
 // Poll schema & model
