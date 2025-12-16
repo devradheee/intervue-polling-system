@@ -1,6 +1,8 @@
-# Poll System
+# intervue-polling-system
 
-A modern, full-stack poll system application built with React and Node.js/Express.
+Live Polling System built as part of the Intervue.io SDE Intern Role Assignment (Round 1). The application allows users to create polls, vote in real time, and view live results with a responsive UI.
+
+A modern, full-stack poll system application built with React and Node.js/Express with MongoDB integration.
 
 ## Features
 
@@ -24,7 +26,8 @@ A modern, full-stack poll system application built with React and Node.js/Expres
 ### Backend
 - Node.js
 - Express.js
-- File-based storage (JSON)
+- MongoDB (with Mongoose)
+- RESTful API
 
 ## Installation
 
@@ -77,8 +80,8 @@ Poll_System/
 │   │   └── index.js
 │   └── package.json
 ├── server/                 # Express backend
-│   ├── data/              # JSON data storage
 │   ├── index.js           # Server entry point
+│   ├── test-connection.js # MongoDB connection test script
 │   └── package.json
 ├── package.json           # Root package.json
 └── README.md
@@ -115,15 +118,19 @@ Poll_System/
 
 ## Environment Variables
 
-Create a `.env` file in the `server` directory (optional):
+Create a `.env` file in the `server` directory:
 ```
 PORT=5000
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/pollSystemDB?retryWrites=true&w=majority
+JWT_SECRET=your_secret_key_here
 ```
 
-Create a `.env` file in the `client` directory (optional):
-```
-REACT_APP_API_URL=http://localhost:5000/api
-```
+**Important:** 
+- Replace `username` and `password` with your MongoDB Atlas credentials
+- URL-encode special characters in password (`@` → `%40`, `#` → `%23`)
+- Replace `cluster.mongodb.net` with your actual cluster hostname
+
+See `FIX_MONGODB.md` for detailed MongoDB setup instructions.
 
 ## Production Build
 
@@ -139,10 +146,20 @@ cd server
 npm start
 ```
 
+## MongoDB Setup
+
+1. Create a MongoDB Atlas account at https://cloud.mongodb.com/
+2. Create a cluster and database user
+3. Configure network access (add `0.0.0.0/0` for development)
+4. Get your connection string from "Connect" → "Connect your application"
+5. Update `server/.env` with your `MONGO_URI`
+6. Test connection: `cd server && node test-connection.js`
+
+For detailed troubleshooting, see `FIX_MONGODB.md`.
+
 ## Future Enhancements
 
-- User authentication
-- Database integration (MongoDB/PostgreSQL)
+- User authentication with JWT
 - Real-time updates with WebSockets
 - Poll sharing with unique links
 - Email notifications
@@ -152,4 +169,3 @@ npm start
 ## License
 
 ISC
-
