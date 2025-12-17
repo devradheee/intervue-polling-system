@@ -1,6 +1,6 @@
 # intervue-polling-system
 
-Live Polling System built as part of the Intervue.io SDE Intern Role Assignment (Round 1). The application allows users to create polls, vote in real time, and view live results with a responsive UI.
+Live Polling System built as part of the Intervue.io SDE Intern Role Assignment. The application allows users to create polls, vote in real time, and view live results with a responsive UI.
 
 A modern, full-stack poll system application built with React and Node.js/Express with MongoDB integration.
 
@@ -36,35 +36,22 @@ A modern, full-stack poll system application built with React and Node.js/Expres
 - npm or yarn
 
 ### Setup
+### Installation
 
-1. **Install all dependencies:**
+1. Clone the repository:
    ```bash
-   npm run install-all
+   git clone https://github.com/devradheee/intervue-polling-system.git
+   cd intervue-polling-system
    ```
 
-   Or manually:
+2. Install dependencies:
    ```bash
    npm install
-   cd server && npm install
-   cd ../client && npm install
    ```
 
-2. **Start the development servers:**
+3. Start the development server:
    ```bash
    npm run dev
-   ```
-
-   This will start:
-   - Backend server on `http://localhost:5000`
-   - Frontend app on `http://localhost:3000`
-
-   Or start them separately:
-   ```bash
-   # Terminal 1 - Backend
-   npm run server
-
-   # Terminal 2 - Frontend
-   npm run client
    ```
 
 ## Project Structure
@@ -125,47 +112,10 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/pollSystemDB?retry
 JWT_SECRET=your_secret_key_here
 ```
 
-**Important:** 
-- Replace `username` and `password` with your MongoDB Atlas credentials
-- URL-encode special characters in password (`@` → `%40`, `#` → `%23`)
-- Replace `cluster.mongodb.net` with your actual cluster hostname
 
-See `FIX_MONGODB.md` for detailed MongoDB setup instructions.
+## Running the Application
 
-## Production Build
-
-### Build Frontend:
-```bash
-cd client
-npm run build
-```
-
-### Start Production Server:
-```bash
-cd server
-npm start
-```
-
-## MongoDB Setup
-
-1. Create a MongoDB Atlas account at https://cloud.mongodb.com/
-2. Create a cluster and database user
-3. Configure network access (add `0.0.0.0/0` for development)
-4. Get your connection string from "Connect" → "Connect your application"
-5. Update `server/.env` with your `MONGO_URI`
-6. Test connection: `cd server && node test-connection.js`
-
-For detailed troubleshooting, see `FIX_MONGODB.md`.
-
-## Future Enhancements
-
-- User authentication with JWT
-- Real-time updates with WebSockets
-- Poll sharing with unique links
-- Email notifications
-- Advanced analytics
-- Poll categories/tags
-
-## License
-
-ISC
+1. The apps will be available at:
+   ```
+   http://localhost:3000/
+   ```
